@@ -1,0 +1,31 @@
+{
+  "name": "classops-ai",
+  "version": "3.5.0",
+  "private": true,
+  "main": "desktop/main.cjs",
+  "author": "ClassOps-AI contributors",
+  "license": "MIT",
+  "type": "module",
+  "description": "Thai teacher workspace with reusable drafts, lesson planning and DOCX formatting",
+  "scripts": {
+    "build": "node build.js",
+    "start": "node server.js",
+    "desktop": "node build.js && electron .",
+    "package:win": "node build.js && node desktop/create-icon.cjs && electron-builder --win --x64 --publish never",
+    "test": "node build.js && node --test tests/*.test.js"
+  },
+  "engines": { "node": ">=20.12" },
+  "devDependencies": { "@xmldom/xmldom": "0.9.12", "happy-dom": "21.0.1", "electron": "44.7.0", "electron-builder": "26.15.3", "sharp": "0.34.5" },
+  "build": {
+    "appId": "org.classops.ai",
+    "productName": "ClassOps-AI",
+    "asar": true,
+    "directories": { "output": "dist" },
+    "files": ["desktop/main.cjs", "desktop/preload.cjs", "desktop/security.cjs", "desktop/credentials.cjs", "desktop/word-pages.cjs", "desktop/word-pages.ps1", "desktop/icon.png", "server.js", "gemini.js", "core.js", "docx.js", "index.html", "styles.css", "enhancements.css", "app.bundle.js", "vendor/**", "LICENSE", "package.json"],
+    "win": { "target": ["portable", "nsis"], "icon": "desktop/icon.ico", "signAndEditExecutable": true, "signtoolOptions": { "signingHashAlgorithms": ["sha256"] } },
+    "portable": { "artifactName": "ClassOps-AI-Portable-${version}-x64.exe" },
+    "nsis": { "artifactName": "ClassOps-AI-Setup-${version}-x64.exe", "oneClick": false, "perMachine": false, "allowElevation": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true, "shortcutName": "ClassOps-AI", "deleteAppDataOnUninstall": false },
+    "npmRebuild": false,
+    "publish": null
+  }
+}

@@ -1,0 +1,6 @@
+'use strict';
+const fs=require('node:fs/promises');
+const path=require('node:path');
+async function readCredentials(directory,secureStore){try{const raw=await fs.readFile(path.join(directory,'google-connection.json'),'utf8');if(raw.length>8192)return null;const data=JSON.parse(raw);if(!data.remember||!secureStore.isEncryptionAvailable()||typeof data.encryptedKey!=='string')return null;const apiKey=secureStore.decryptString(Buffer.from(data.encryptedKey,'base64'));if(!/^[A-Za-z0-9_-]{20,200}$/.test(apiKey))return null;return {apiKey,model:typeof data.model==='string'?data.model:undefined};}catch{return null;}}
+async function saveCredentials(directory,{apiKey,model,remember},secureStore){const data={version:1,remember:!!remember,model};if(remember){if(!secureStore.isEncryptionAvailable())throw new Error('Windows ไม่พร้อมเข้ารหัสคีย์ กรุณาใช้คีย์เฉพาะรอบที่เปิดแอป');data.encryptedKey=secureStore.encryptString(apiKey).toString('base64');}await fs.mkdir(directory,{recursive:true});const file=path.join(directory,'google-connection.json'),temporary=file+'.tmp';await fs.writeFile(temporary,JSON.stringify(data),{mode:0o600});await fs.rename(temporary,file);}
+module.exports={readCredentials,saveCredentials};
