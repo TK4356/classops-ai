@@ -14,12 +14,14 @@ project compro sec1
 
 ## ดาวน์โหลดแอป Windows (.exe)
 
-รุ่น **3.5.2 สำหรับ Windows x64** เลือกดาวน์โหลดอย่างใดอย่างหนึ่ง:
+รุ่นที่เผยแพร่ให้ดาวน์โหลดแล้วคือ **3.5.1 สำหรับ Windows x64** เลือกดาวน์โหลดอย่างใดอย่างหนึ่ง:
 
-- **[ดาวน์โหลดแบบติดตั้ง (Setup)](https://github.com/TK4356/classops-ai/releases/download/v3.5.2/ClassOps-AI-Setup-3.5.2-x64.exe)** — ติดตั้งโปรแกรมและสร้างไอคอนสำหรับเปิดใช้งาน
-- **[ดาวน์โหลดแบบไม่ต้องติดตั้ง (Portable)](https://github.com/TK4356/classops-ai/releases/download/v3.5.2/ClassOps-AI-Portable-3.5.2-x64.exe)** — ดาวน์โหลดแล้วเปิดไฟล์เพื่อใช้แอปได้
-- [ดูรายละเอียดรุ่นและไฟล์ดาวน์โหลดทั้งหมด](https://github.com/TK4356/classops-ai/releases/tag/v3.5.2)
-- [ดาวน์โหลดค่า SHA256 สำหรับตรวจสอบไฟล์](https://github.com/TK4356/classops-ai/releases/download/v3.5.2/ClassOps-AI-Windows-3.5.2-SHA256.txt)
+- **[ดาวน์โหลดแบบติดตั้ง (Setup)](https://github.com/TK4356/classops-ai/releases/download/v3.5.1/ClassOps-AI-Setup-3.5.1-x64.exe)** — ติดตั้งโปรแกรมและสร้างไอคอนสำหรับเปิดใช้งาน
+- **[ดาวน์โหลดแบบไม่ต้องติดตั้ง (Portable)](https://github.com/TK4356/classops-ai/releases/download/v3.5.1/ClassOps-AI-Portable-3.5.1-x64.exe)** — ดาวน์โหลดแล้วเปิดไฟล์เพื่อใช้แอปได้
+- [ดูรายละเอียดรุ่นและไฟล์ดาวน์โหลดทั้งหมด](https://github.com/TK4356/classops-ai/releases/tag/v3.5.1)
+- [ดาวน์โหลดค่า SHA256 สำหรับตรวจสอบไฟล์](https://github.com/TK4356/classops-ai/releases/download/v3.5.1/ClassOps-AI-Windows-3.5.1-SHA256.txt)
+
+**สถานะ 3.5.2:** ซอร์สโค้ดสีไฮไลต์ใหม่อยู่ในสาขา main แล้ว และสร้างไฟล์ Windows ผ่านการทดสอบเปิดแอปแล้ว แต่ยังไม่เผยแพร่ Release เนื่องจากระบบแนบไฟล์ของ GitHub แจ้งข้อผิดพลาด จึงยังคงลิงก์ดาวน์โหลดรุ่น 3.5.1 ที่ใช้งานได้ไว้ข้างต้น
 
 รุ่น 3.5.2 ปรับไฮไลต์ส่วนที่แก้เป็นพื้นเขียวเข้มและตัวอักษรสีขาวเพื่อให้อ่านชัดขึ้น โดยยังเน้นเฉพาะจุดที่เปลี่ยน และไม่เปลี่ยนรูปแบบในไฟล์ Word
 
