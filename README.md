@@ -1,4 +1,4 @@
-# ClassOps-AI 3.5.0
+# ClassOps-AI 3.5.1
 
 ## แนวทางการพัฒนา: Vibe Coding
 
@@ -14,12 +14,14 @@ project compro sec1
 
 ## ดาวน์โหลดแอป Windows (.exe)
 
-รุ่น **3.5.0 สำหรับ Windows x64** เลือกดาวน์โหลดอย่างใดอย่างหนึ่ง:
+รุ่น **3.5.1 สำหรับ Windows x64** เลือกดาวน์โหลดอย่างใดอย่างหนึ่ง:
 
-- **[ดาวน์โหลดแบบติดตั้ง (Setup)](https://github.com/TK4356/classops-ai/releases/download/v3.5.0/ClassOps-AI-Setup-3.5.0-x64.exe)** — ติดตั้งโปรแกรมและสร้างไอคอนสำหรับเปิดใช้งาน
-- **[ดาวน์โหลดแบบไม่ต้องติดตั้ง (Portable)](https://github.com/TK4356/classops-ai/releases/download/v3.5.0/ClassOps-AI-Portable-3.5.0-x64.exe)** — ดาวน์โหลดแล้วเปิดไฟล์เพื่อใช้แอปได้
-- [ดูรายละเอียดรุ่นและไฟล์ดาวน์โหลดทั้งหมด](https://github.com/TK4356/classops-ai/releases/tag/v3.5.0)
-- [ดาวน์โหลดค่า SHA256 สำหรับตรวจสอบไฟล์](https://github.com/TK4356/classops-ai/releases/download/v3.5.0/ClassOps-AI-Windows-3.5.0-SHA256.txt)
+- **[ดาวน์โหลดแบบติดตั้ง (Setup)](https://github.com/TK4356/classops-ai/releases/download/v3.5.1/ClassOps-AI-Setup-3.5.1-x64.exe)** — ติดตั้งโปรแกรมและสร้างไอคอนสำหรับเปิดใช้งาน
+- **[ดาวน์โหลดแบบไม่ต้องติดตั้ง (Portable)](https://github.com/TK4356/classops-ai/releases/download/v3.5.1/ClassOps-AI-Portable-3.5.1-x64.exe)** — ดาวน์โหลดแล้วเปิดไฟล์เพื่อใช้แอปได้
+- [ดูรายละเอียดรุ่นและไฟล์ดาวน์โหลดทั้งหมด](https://github.com/TK4356/classops-ai/releases/tag/v3.5.1)
+- [ดาวน์โหลดค่า SHA256 สำหรับตรวจสอบไฟล์](https://github.com/TK4356/classops-ai/releases/download/v3.5.1/ClassOps-AI-Windows-3.5.1-SHA256.txt)
+
+รุ่น 3.5.1 ปรับตัวหนาในหน้าตรวจไฟล์ Word ให้แสดงเฉพาะส่วนที่แก้จริง แยกหลายจุดในประโยคเดียว และคงข้อความระหว่างจุดแก้เป็นตัวปกติ ตัวหนานี้ใช้เปรียบเทียบในแอปเท่านั้น ไม่เพิ่มตัวหนาในไฟล์ Word
 
 **ผู้ใช้ไฟล์ .exe ไม่ต้องติดตั้ง Node.js ไม่ต้องรัน `node server.js` และไม่ต้องสร้างไฟล์ `.env`** แอปเปิดระบบเบื้องหลังให้อัตโนมัติ
 
@@ -119,7 +121,7 @@ vendor/              JSZip และใบอนุญาต
 tests/               การทดสอบด้วยบริการจำลอง
 ```
 
-ผ่าน 64 automated tests และตรวจเปิด Windows executable สำเร็จ Google/Word worker ในชุดทดสอบใช้ข้อมูลจำลอง ไม่รับรองบริการ Google หรือ Office ทุกบัญชี/เครื่อง
+ผ่าน 73 automated tests Google/Word worker ในชุดทดสอบใช้ข้อมูลจำลอง ไม่รับรองบริการ Google หรือ Office ทุกบัญชี/เครื่อง
 
 ## ก่อนเผยแพร่
 

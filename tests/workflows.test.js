@@ -33,6 +33,40 @@ function setup(saved={},url='file:///ClassOps-AI.html',blockedStorage=false,fetc
   return {window,$,submit,input,navigate,downloads,savedState,state:()=>JSON.parse(window.localStorage.getItem(KEY))};
 }
 async function until(fn){for(let i=0;i<200;i++){if(fn())return;await new Promise(r=>setTimeout(r,10));}throw new Error('Workflow did not complete');}
+
+test('Word review bolds only separate changed spans and never inserts bold placeholders',async()=>{
+  const cases=[
+    ['ครูทำงานผิด เพื่อใช้สอน และส่งช้า','ครูทำงานถูก เพื่อใช้สอน และส่งเร็ว',['ผิด','ช้า'],['ถูก','เร็ว']],
+    ['ครูตรวจงาน','ครูช่วยตรวจงาน',[],['ช่วย']],
+    ['ครูช่วยตรวจงาน','ครูตรวจงาน',['ช่วย'],[]]
+  ],x=aiSetup(),base=googleMock([]);
+  try{
+    x.window.fetch=async(url,options)=>{
+      const response=await base(url,options);if(url!=='./api/assistant')return response;
+      const body=JSON.parse(options.body),result=await response.json();
+      if(body.kind==='word')result.result.edits=body.data.paragraphs.map((p,i)=>({id:p.id,text:cases[i][1]}));
+      return new Response(JSON.stringify(result));
+    };
+    const zip=new x.window.JSZip(),W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+    zip.file('[Content_Types].xml','<Types/>');
+    zip.file('word/document.xml',`<w:document xmlns:w="${W}"><w:body>${cases.map(([text])=>`<w:p><w:r><w:t>${text}</w:t></w:r></w:p>`).join('')}</w:body></w:document>`);
+    const bytes=await zip.generateAsync({type:'arraybuffer'}),file={name:'เปรียบเทียบ.docx',size:bytes.byteLength,arrayBuffer:async()=>bytes};
+    x.$('#wordFile').onchange({target:{files:[file]}});await until(()=>!x.$('#formatWord').disabled);
+    x.$('#wordAIConsent').checked=true;x.$('#analyzeWordAI').click();await until(()=>!x.$('#applyWordAI').hidden);
+    const rows=Array.from(x.window.document.querySelectorAll('#wordAIResult .ai-suggestion'));
+    assert.equal(rows.length,cases.length);
+    rows.forEach((row,i)=>{
+      const lines=row.querySelectorAll('.word-diff'),[before,after,removed,added]=cases[i];
+      assert.equal(lines[0].textContent,'ก่อน: '+before);assert.equal(lines[1].textContent,'หลัง: '+after);
+      assert.deepEqual(Array.from(lines[0].querySelectorAll('strong'),n=>n.textContent),removed);
+      assert.deepEqual(Array.from(lines[1].querySelectorAll('strong'),n=>n.textContent),added);
+    });
+    x.$('#applyWordAI').click();x.submit('#wordForm');await until(()=>x.downloads.length===1);
+    const output=await x.window.JSZip.loadAsync(await x.downloads[0].arrayBuffer()),xml=await output.file('word/document.xml').async('string');
+    for(const [,after]of cases)assert(xml.includes(after));
+    assert.equal(new DOMParser().parseFromString(xml,'application/xml').getElementsByTagNameNS(W,'b').length,0); // Review bold must not enter DOCX formatting.
+  }finally{x.window.happyDOM.abort();}
+});
 test('research controls submit real layout metadata and support tools appear after main file workspace',async()=>{const log=[],x=aiSetup(log);try{x.$('#wordExample').click();await until(()=>!x.$('#formatWord').disabled);x.input('#wordDocumentType','research');x.input('#wordInstitutionRules','ตามคู่มือสถาบัน ขอบซ้าย 3.81 ซม.');x.$('#wordAIConsent').checked=true;x.$('#analyzeWordAI').click();await until(()=>!x.$('#applyWordAI').hidden);assert.equal(log[0].data.documentType,'research');assert(log[0].data.institutionRules.includes('3.81'));const meta=JSON.parse(log[0].data.layoutSummary);assert.equal(meta.sections[0].marginsCm.left,2.54);assert(x.$('.word-grid').compareDocumentPosition(x.$('#wordSupportTools'))&4);for(const id of ['calculateWordPages','wordLockApply','testSmallAI'])assert(x.$('#wordSupportTools').contains(x.$('#'+id)));x.input('#wordInstitutionRules','เปลี่ยนระเบียบ');x.$('#wordInstitutionRules').dispatchEvent(new x.window.Event('change'));assert.equal(x.$('#applyWordAI').hidden,true);}finally{x.window.happyDOM.abort();}});
 test('page button maps desktop results and can lock a whole page instead of paragraph numbers',async()=>{const google=googleMock([]),bridge={isDesktop:true,requestApi:async(route,payload)=>{const r=await google('./api/'+route,{body:payload?JSON.stringify(payload):undefined});return {status:r.status,data:await r.json()};},calculateWordPages:async bytes=>{const zip=await x.window.JSZip.loadAsync(bytes),xml=new x.window.DOMParser().parseFromString(await zip.file('word/document.xml').async('string'),'application/xml'),W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';return {ok:true,totalPages:12,paragraphs:Array.from(xml.getElementsByTagNameNS(W,'p')).map(p=>({text:Array.from(p.getElementsByTagNameNS(W,'t')).map(t=>t.textContent).join('')+'\r',start:3,end:3}))};}},x=setup({},'classops://app/index.html',false,null,bridge);try{x.$('#wordExample').click();await until(()=>!x.$('#formatWord').disabled);x.$('#calculateWordPages').click();await until(()=>x.$('#wordPageStatus').textContent.includes('12 หน้า'));assert(x.$('#wordParagraphList').textContent.includes('Page 3 of 12'));assert.equal(x.$('#wordLockUnit').value,'page');x.input('#wordLockStart','3');x.input('#wordLockEnd','3');x.$('#wordLockApply').click();assert(x.$('#wordLockStatus').textContent.includes('ล็อกเพิ่มเอง'));}finally{x.window.happyDOM.abort();}});
 test('manual lock excludes selected paragraphs from both AI fields and invalidates previous review',async()=>{const log=[],x=aiSetup(log);try{x.$('#wordExample').click();await until(()=>!x.$('#formatWord').disabled);x.input('#wordLockStart','1');x.input('#wordLockEnd','1');x.$('#wordLockApply').click();assert(x.$('#wordLockStatus').textContent.includes('ล็อกเพิ่มเอง 1'));x.$('#wordAIConsent').checked=true;x.$('#analyzeWordAI').click();await until(()=>!x.$('#applyWordAI').hidden);const data=log[0].data;assert(!data.paragraphs.some(p=>p.id==='p0'));assert(!data.excerpt.includes('บันทึกการประชุมฝ่ายวิชาการ'));x.$('#wordLockClear').click();assert.equal(x.$('#applyWordAI').hidden,true);assert(x.$('#wordAIResult').textContent.includes('วิเคราะห์ใหม่'));}finally{x.window.happyDOM.abort();}});

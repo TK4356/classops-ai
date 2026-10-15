@@ -64,6 +64,39 @@ function protectedParagraphs(doc,styles){
 }
 function editableParagraph(p,blocked){return !blocked?.has(p)&&p.parentNode?.localName==='body'&&elements(p,'t').length>0&&Array.from(p.childNodes).filter(n=>n.nodeType===1).every(n=>n.namespaceURI===W&&['pPr','r'].includes(n.localName))&&elements(p,'r').every(r=>Array.from(r.childNodes).filter(n=>n.nodeType===1).every(n=>n.namespaceURI===W&&['rPr','t'].includes(n.localName)));}
 function comparisonParts(before,after){let start=0,end=0;while(start<before.length&&start<after.length&&before[start]===after[start])start++;while(end<before.length-start&&end<after.length-start&&before[before.length-1-end]===after[after.length-1-end])end++;return {prefix:before.slice(0,start),before:before.slice(start,before.length-end),after:after.slice(start,after.length-end),suffix:end?before.slice(-end):''};}
+// Review-only diff. Keep comparisonParts for DOCX run replacement unchanged.
+// Graphemes keep Thai vowels/tones and joined emoji together when highlighting.
+function comparisonSegments(before,after){
+  const segmenter=new Intl.Segmenter('th',{granularity:'grapheme'});
+  const split=text=>Array.from(segmenter.segment(text),part=>part.segment);
+  const a=split(before),b=split(after),segments=[];
+  const append=(type,text)=>{if(!text)return;const last=segments[segments.length-1];if(last?.type===type)last.text+=text;else segments.push({type,text});};
+  let start=0,end=0;
+  while(start<a.length&&start<b.length&&a[start]===b[start])start++;
+  while(end<a.length-start&&end<b.length-start&&a[a.length-1-end]===b[b.length-1-end])end++;
+  append('equal',a.slice(0,start).join(''));
+  const left=a.slice(start,a.length-end),right=b.slice(start,b.length-end),n=left.length,m=right.length;
+  if(!n)append('insert',right.join(''));
+  else if(!m)append('delete',left.join(''));
+  else {
+    // Supported AI paragraphs are bounded to 6,000 input / 3,000 output chars.
+    // LCS preserves every unchanged island between multiple edits in a sentence.
+    const width=m+1,lcs=new Uint16Array((n+1)*width);
+    for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--){
+      const cell=i*width+j;
+      lcs[cell]=left[i]===right[j]?lcs[cell+width+1]+1:Math.max(lcs[cell+width],lcs[cell+1]);
+    }
+    let i=0,j=0;
+    while(i<n&&j<m){
+      if(left[i]===right[j]){append('equal',left[i]);i++;j++;}
+      else if(lcs[(i+1)*width+j]>=lcs[i*width+j+1])append('delete',left[i++]);
+      else append('insert',right[j++]);
+    }
+    append('delete',left.slice(i).join(''));append('insert',right.slice(j).join(''));
+  }
+  append('equal',end?a.slice(-end).join(''):'');
+  return segments;
+}
 function replaceParagraphText(p,text){const nodes=elements(p,'t'),old=nodes.map(n=>n.textContent).join(''),parts=comparisonParts(old,text),start=parts.prefix.length,finish=old.length-parts.suffix.length;let offset=0,inserted=false;for(const node of nodes){const value=node.textContent,a=offset,b=offset+value.length;offset=b;let next=value.slice(0,Math.max(0,Math.min(value.length,start-a)));if(!inserted&&b>=start){next+=parts.after;inserted=true;}if(b>finish)next+=value.slice(Math.max(0,finish-a));node.textContent=next;node.setAttributeNS('http://www.w3.org/XML/1998/namespace','xml:space','preserve');}}
 function wordAIParagraphs(loaded){let chars=0;return (loaded.editableParagraphs||[]).filter(p=>{if((loaded.lockedParagraphIds||[]).includes(p.id)||chars+p.text.length>6000)return false;chars+=p.text.length;return true;}).slice(0,80);}
 function mapWordPages(loaded,result){
@@ -203,7 +236,7 @@ function invalidateWordReview(){loadVersion++;proposedWord=null;acceptedWordEdit
 for(const id of ['wordDocumentType','wordInstitutionRules'])$('#'+id).addEventListener('change',()=>{if(!loadedWord)return;invalidateWordReview();$('#wordAIResult').textContent='ประเภทเอกสารหรือระเบียบเปลี่ยนแล้ว กรุณาวิเคราะห์ใหม่เพื่อใช้เกณฑ์ล่าสุด';});
 $('#wordLockApply').onclick=()=>{if(!loadedWord)return toast('เลือกไฟล์ก่อน');const start=Number($('#wordLockStart').value),end=Number($('#wordLockEnd').value),pages=$('#wordLockUnit').value==='page',count=pages?loadedWord.pageMap?.totalPages:loadedWord.paragraphRecords.length;if(!count)return toast('คำนวณเลขหน้าจริงก่อนล็อกเป็นช่วงหน้า');if(!Number.isInteger(start)||!Number.isInteger(end)||start<1||end<start||end>count)return toast('ตรวจเลขเริ่มและสิ้นสุดให้ตรงกับหน่วยที่เลือก');const selected=pages?loadedWord.paragraphRecords.filter(p=>{const page=loadedWord.pageMap.byId[p.id];return !page||page.start<=end&&page.end>=start;}):loadedWord.paragraphRecords.slice(start-1,end);loadedWord.lockedParagraphIds=[...new Set([...loadedWord.lockedParagraphIds,...selected.map(p=>p.id)])];invalidateWordReview();if(pages&&loadedWord.pageMap.unknownIds.length)toast('ล็อกช่วงหน้าที่เลือก พร้อมส่วนไม่ทราบหน้าเพื่อป้องกันการแก้ผิดตำแหน่ง');};
 $('#wordLockClear').onclick=()=>{if(!loadedWord)return;loadedWord.lockedParagraphIds=[];invalidateWordReview();};
-function comparisonLine(title,before,after,useAfter){const parts=comparisonParts(before,after),row=el('p','word-diff'),change=el('strong','word-change',(useAfter?parts.after:parts.before)||'(ไม่มีข้อความในช่วงนี้)');row.append(document.createTextNode(title+': '+parts.prefix),change,document.createTextNode(parts.suffix));return row;}
+function comparisonLine(title,before,after,useAfter){const row=el('p','word-diff');row.append(document.createTextNode(title+': '));for(const part of comparisonSegments(before,after)){if(part.type===(useAfter?'delete':'insert'))continue;row.append(part.type==='equal'?document.createTextNode(part.text):el('strong','word-change',part.text));}return row;}
 $('#wordForm').querySelector('.subheading').textContent='รักษารูปแบบต้นฉบับ';
 $('#wordForm').querySelectorAll('.form-row').forEach(row=>{row.hidden=true;row.querySelectorAll('input,select').forEach(field=>{field.disabled=true;field.required=false;});});
 $('#wordAIRequest').placeholder='ตรวจคำผิดและประโยคอ่านยาก เสนอถ้อยคำที่อ่านง่ายโดยคงข้อเท็จจริง';
