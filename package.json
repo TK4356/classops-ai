@@ -1,6 +1,6 @@
 {
   "name": "classops-ai",
-  "version": "3.5.1",
+  "version": "3.5.2",
   "private": true,
   "main": "desktop/main.cjs",
   "author": "ClassOps-AI contributors",
